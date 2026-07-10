@@ -14,13 +14,16 @@ from .serializers import (
     ConfirmationSerializer,
     RegisterValidateSerializer,
 )
+from users.tasks import hello, send_otp_mail
+from time import sleep
 
 
 class AuthorizationAPIView(CreateAPIView):
     serializer_class = AuthValidateSerializer
 
     def post(self, request):
-        print(request.auth.get("email"))
+        hello.delay("Ruslan")
+        # sleep(20)
         serializer = AuthValidateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -62,6 +65,7 @@ class RegistrationAPIView(CreateAPIView):
             code = "".join(random.choices(string.digits, k=6))
 
             confirmation_code = ConfirmationCode.objects.create(user=user, code=code)
+            send_otp_mail.delay(email, code)
 
         return Response(
             status=status.HTTP_201_CREATED,
